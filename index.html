@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IA4B - Gestor de tasques</title>
+    <style>
+      /* Variables de color base */
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --ok: #16a34a;
+        --ok-soft: #dcfce7;
+        --warn: #facc15;
+        --danger: #ef4444;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+      }
+
+      /* Distribucio a dues columnes */
+      .layout {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      button {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      button {
+        background: #2563eb;
+        color: #fff;
+        border: 0;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+
+      .message {
+        min-height: 20px;
+        margin-top: -4px;
+        margin-bottom: 10px;
+        color: var(--danger);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .preview {
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .preview p {
+        margin: 0 0 6px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .tasks {
+        display: grid;
+        gap: 10px;
+      }
+
+      .task {
+        background: #fff;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .task strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .task-meta {
+        margin: 2px 0;
+        font-size: 13px;
+      }
+
+      .prio-baja {
+        border-color: var(--ok);
+      }
+
+      .prio-media {
+        border-color: var(--warn);
+      }
+
+      .prio-alta {
+        border-color: var(--danger);
+      }
+
+      .task.hecha {
+        background: var(--ok-soft);
+      }
+
+      /* Adaptacio a mobil */
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>IA4B - Gestor de tasques</h1>
+      <div class="layout">
+        <!-- Columna esquerra: formulari + previsualitzacio -->
+        <section class="card">
+          <h2>Formulari</h2>
+
+          <form class="field" id="formNewTask">
+            <label for="tarea">Tasca</label>
+            <input id="tarea" type="text" placeholder="Escriu una tasca..." />
+          </form>
+
+          <div id="mensajeError" class="message"></div>
+
+          <div class="field">
+            <label for="prioridad">Prioritat</label>
+            <select id="prioridad">
+              <option value="baja">Baixa</option>
+              <option value="media">Mitjana</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+
+          <div class="field">
+          <button id="btnAgregar" type="button">Afegir tasca</button>
+          </div>
+
+          <h3>Vista prèvia</h3>
+          <div id="divPreview">
+            <div class="preview">
+              <p id="previewTexto" class="muted">Escriu una tasca...</p>
+              <p id="previewPrioridad">Prioritat: baixa</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Columna dreta: llistat de tasques -->
+        <section class="card">
+          <h2>Llistat de tasques</h2>
+
+          <div id="listaTareas" class="tasks">
+            <!-- Aqui se muestran las tareas -->
+            <div class="task prio-baixa">
+              <strong>Tarea 1</strong>
+              
+              <p class="task-meta">Prioiridad: Alta</p>
+              <p class="task-meta">Estado: Pendiente</p>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </main>
+    <script>
+      // Array inicial de tasques que s'ha de mostrar a l'exercici 3
+	  const tareas = [
+      { id: 1, tarea: "Preparar examen de JS", prioridad: "alta", estado: "pendiente" },
+      { id: 2, tarea: "Subir practica al campus", prioridad: "media", estado: "pendiente" },
+      { id: 3, tarea: "Revisar apuntes", prioridad: "baja", estado: "hecha" }
+    ];
+
+    const cls = {
+      listaTareas: document.querySelector("#listaTareas"),
+
+      divPreview: document.querySelector("#divPreview"),
+
+      btnNewTask: document.querySelector("#btnAgregar"),
+      formNewTask: document.querySelector("#formNewTask"),
+      newTarea: document.querySelector("#tarea"),
+      newPrior: document.querySelector("#prioridad"),
+
+
+    }
+
+    cls.btnNewTask.addEventListener("click", formNewTask);
+
+    cls.newTarea.addEventListener("input", preview);
+    cls.newPrior.addEventListener("change", preview);
+
+    function formNewTask() {
+      const tarea = cls.newTarea.value;
+      const prioridad = cls.newPrior.value;
+      const textError = document.querySelector("#mensajeError");
+
+      if(tarea) {
+        textError.innerHTML = '';
+
+        const newId = (tareas[tareas.length-1].id)+1;
+
+        const obj = {
+          id: newId,
+          tarea: tarea,
+          prioridad: prioridad,
+          estado: "pendiente"
+        }
+
+        tareas.push(obj);
+
+        cls.formNewTask.reset();
+
+        init();
+
+      } else {
+        document.querySelector("#mensajeError").innerHTML = "<p>La tarea no puede estar vacía.</p>";
+      }
+    }
+
+    cls.listaTareas.addEventListener("click", changeStatus);
+
+    function changeStatus(e) {
+      const taskDiv = e.target.closest(".task");
+
+      console.log(taskDiv);
+
+      const id = Number(taskDiv.id);
+
+      const tarea = tareas.find(t => t.id === id);
+      
+      console.log(tarea);
+      if(tarea.estado == "pendiente") {
+        tarea.estado = "hecha";
+      } else {
+        tarea.estado = "pendiente";
+      }
+
+      init();
+
+    }
+
+    function preview() {
+      const tarea = cls.newTarea.value;
+      const prior = cls.newPrior.value;
+      let html = '';
+      if(tarea) {
+        html = `
+          <div class="preview prio-${prior}">
+            <p id="previewTexto" class="muted">${tarea}</p>
+            <p id="previewPrioridad">Prioritat: ${prior}</p>
+          </div>
+        `;
+      } else {
+        html = `
+          <div class="preview prio-${prior}">
+            <p id="previewTexto" class="muted">Escriu una tasca...</p>
+            <p id="previewPrioridad">Prioritat: ${prior}</p>
+          </div>
+        `;
+      }
+      
+      cls.divPreview.innerHTML = html;
+
+    }
+
+    function init() {
+      let html = '';
+
+      tareas.forEach(ele => {
+        let cla = '';
+        if(ele.estado == "hecha") {
+          cla = "hecha";
+        }
+        html += `
+          <div id="${ele.id}" class="task ${cla} prio-${ele.prioridad}">
+            <strong>${ele.tarea}</strong>
+            <p class="task-meta">Prioiridad: ${ele.prioridad}</p>
+            <p class="task-meta">Estado: ${ele.estado}</p>
+          </div>
+        `;
+      });
+
+      cls.listaTareas.innerHTML = html;
+
+      preview();
+
+    }
+
+    preview();
+    init();
+
+    </script>
+  </body>
+</html>
